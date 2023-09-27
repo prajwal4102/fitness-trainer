@@ -1,18 +1,25 @@
-import cv2
-import pyttsx3
+#importing dependencies 
+import cv2                  #importing computer vision 
+import pyttsx3              #importing Text-to-speech library for audio feedback
 
-import mediapipe as mp
-import numpy as np
+import mediapipe as mp              #importing Mediapipe which gives us all the pose estimation libraries and all the different media pipe solutions (solutions basically means different components within mediapipe library)
+import numpy as np                  #importing mediapipe which later in the code is used in trigonometry thing
+
+
+
+#creating variables
 prev=None
 curr=None
 
-mp_drawing=mp.solutions.drawing_utils
-mp_pose=mp.solutions.pose
+mp_drawing=mp.solutions.drawing_utils     #mp_drawing variable is used to access the drawing utilites                                      #drawing utilites are within mediapipe solutions and helps inorder to visualize the pose of a person 
+mp_pose=mp.solutions.pose                 #mp_pose variable is used to access the pose models availabe                                     # in mediapipe there is whole lot of solutions or we can say models such as hand pose model which is helpful in finding the joints of the hand from an image or set of video frames and mp_pose vaiable helps to access any of the available models
 voice=pyttsx3.init()
+
+
 
 #function to calculate angle
 def calculate_angle(a,b,c=0):
-    a=np.array(a)#first point
+    a=np.array(a)#first point                           # all the angles passed is stored as numpy array and it helps is in making calculating angles easier
     b=np.array(b)#mid point
     c=np.array(c)#last point
 
@@ -22,24 +29,27 @@ def calculate_angle(a,b,c=0):
   
     return angle
 
-# reading video feed
-cap=cv2.VideoCapture('warrior.mp4')
-#setup mediapipe instance
-ret,frame=cap.read()
-cv2.imshow('frame',frame)
 
-with mp_pose.Pose(min_detection_confidence=0.5,min_tracking_confidence=0.5) as pose:
-    while cap.isOpened():
-     ret,frame=cap.read()
 
-    #opencv feed by default is in bgr ,to convert to rgb-
-     image=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+# READING VEDIO FEED 
+cap=cv2.VideoCapture('warrior.mp4')      #accessing our webcam                                                                           #created an instance of VedioCapture class and pass the camera number or recorded vedio path inside the VedioCapture()
+
+ret,frame=cap.read()                     #reading from the webcam feed                                                                   #cap.read() will basically return two things , one is image caught that is recieved with the help of frame variable and other thing it returns is the reading from the resource specified is successful or not (using True or False) so that gets stored in ret
+cv2.imshow('frame',frame)                #visualizing how our computer is seeing through webcam
+
+
+with mp_pose.Pose(min_detection_confidence=0.5,min_tracking_confidence=0.5) as pose:       #creating a mediapipe instance and accessing it with the help of pose variable 
+    while cap.isOpened():                                                                  #while the image feed is open we will be reading from the vedio feed
+     ret,frame=cap.read()                                                                  #frame by frame we will be reading from the vedio feed 
+
+    #RECOLORING OUR IMAGE 
+     image=cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)                                           #opencv feed by default reads images in BGR format , but in order to do operations on this image using Mediapipe it must be in RGB format
      image.flags.writeable=False
 
-    #makes detection
+    #makes detection using mediapipe
      results=pose.process(image)
 
-    #restoring back to bgr format
+    #restoring back to bgr format in order to process the image further using computer vision ,and computer vision requires image to be in BGR format
      image.flags.writeable=True
      image=cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
     #extract landmarks
@@ -68,12 +78,12 @@ with mp_pose.Pose(min_detection_confidence=0.5,min_tracking_confidence=0.5) as p
          angle1=(180-calculate_angle(Lshoulder,Lelbow).astype(int))
          print('angle1-',angle1)
         
-        #print the angle on the screen
+        #print the angle on the screen using putText() provided by computer vision 
          cv2.putText(image,str(angle1),
                      tuple(np.multiply(Lshoulder,[850,480]).astype(int)),
                      cv2.FONT_HERSHEY_SIMPLEX,0.5,(255,255,255),2,cv2.LINE_AA
                      )
-        #calculate angle between sholer,elbow and wrist
+        #calculate angle between shouler,elbow and wrist
          angle2=calculate_angle(Rshoulder,Relbow).astype(int)
          print('angle2-',angle2)
         #print the angle on the screen
@@ -153,14 +163,15 @@ with mp_pose.Pose(min_detection_confidence=0.5,min_tracking_confidence=0.5) as p
     #visualize the feed
      cv2.imshow('frame',image)
      
-     #exit key q
-     if cv2.waitKey(30) & 0xff == ord('q'):
+     # Exit the loop when the 'q' key is pressed
+     if cv2.waitKey(30) & 0xff == ord('q'):              #the window created gets closed only when 'q' is entered , basically it is like getch() in C language                                # waitkey(30) means the window created will be held and will not disappearing till 30 seconds , another thing is the mask 0xff which basically a mask bit and if the entered key is equal to the ascii value of the key which is being compared with mask bit then obly the window will be closed by exiting the while loop
             break
    
 
 
 #to release all the resource held(like camera)
 cap.release()
+#after the vedio feed is closed the window in which it is shown should also be destroyed
 cv2.destroyAllWindows()
 
 
